@@ -61,4 +61,11 @@ public class MainActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, new String[]{"android.permission.ACCESS_FINE_LOCATION"}, REQUEST_CODE_ASK_PERMISSIONS);
         }
     }
+    public void displayAppLoc(String lat, String lon) {
+        TextView txvLat = (TextView) findViewById(R.id.txv_latitude);
+        TextView txvLon = (TextView) findViewById(R.id.txv_longitude);
+
+        txvLat.setText(lat);
+        txvLon.setText(lon);
+    }
 }

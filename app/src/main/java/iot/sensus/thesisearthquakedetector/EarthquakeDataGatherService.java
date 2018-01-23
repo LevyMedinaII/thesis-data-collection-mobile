@@ -1,5 +1,6 @@
 package iot.sensus.thesisearthquakedetector;
 
+import android.app.Activity;
 import android.app.Service;
 import android.content.Intent;
 import android.location.Location;
@@ -8,6 +9,8 @@ import android.content.Context;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.TextView;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -34,7 +37,8 @@ public class EarthquakeDataGatherService extends Service {
     private static final int LOCATION_INTERVAL = 5000;
     private static final float LOCATION_DISTANCE = 0f;
 
-    private ArrayList<String[]> batchData;
+    private ArrayList<String[]> batchData = new ArrayList<>();
+
     private class LocationListener implements android.location.LocationListener
     {
         Location mLastLocation;
@@ -89,7 +93,6 @@ public class EarthquakeDataGatherService extends Service {
 
     @Override
     public void onCreate() {
-        batchData = new ArrayList<>();
         Log.e(TAG, "onCreate");
         initializeLocationManager();
         try {
