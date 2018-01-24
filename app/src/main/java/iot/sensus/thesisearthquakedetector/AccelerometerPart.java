@@ -31,11 +31,12 @@ public class AccelerometerPart extends Service implements SensorEventListener {
     private SensorManager mSensorManager = null;
     private Sensor mSensor = null;
     private double mLastX = 0, mLastY = 0;
+    private double timeInSec = 0;
     private List<Double> mData5s;
-    private List<Long> mTime5s;
+    private List<Double> mTime5s;
     private long mStartTime = 0;
     private long mLastUpdate = 0;
-    private String url;
+    private String url = "https://thesis-shake-server.herokuapp.com/test";
 
     @Nullable
     @Override
@@ -75,7 +76,7 @@ public class AccelerometerPart extends Service implements SensorEventListener {
             long currTime = System.currentTimeMillis();
 
             if(mData5s.size()==500){
-                Map<Long,Double> params = new HashMap<>();
+                Map<Double,Double> params = new HashMap<>();
                 for(int i=0; i<mData5s.size(); i++) params.put(mTime5s.get(i),mData5s.get(i));
 
                 JSONObject jsonObject = new JSONObject(params);
@@ -114,7 +115,9 @@ public class AccelerometerPart extends Service implements SensorEventListener {
 
                 mData5s.add(disXY);
 
-                mTime5s.add(currTime-mStartTime);
+                timeInSec = (currTime-mStartTime)/1000;
+
+                mTime5s.add(timeInSec);
 
                 mLastX=x;
                 mLastY=y;
