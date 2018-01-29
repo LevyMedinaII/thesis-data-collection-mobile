@@ -9,6 +9,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import com.android.volley.Request;
 import com.android.volley.Response;
@@ -16,9 +17,12 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,10 +37,11 @@ public class AccelerometerPart extends Service implements SensorEventListener {
     private double mLastX = 0, mLastY = 0;
     private double timeInSec = 0;
     private List<Double> mData5s;
+    private List<Double> mAcc5s;
     private List<Double> mTime5s;
     private long mStartTime = 0;
     private long mLastUpdate = 0;
-    private String url = "https://thesis-shake-server.herokuapp.com/test";
+    private String url = "https://thesis-shake-server.herokuapp.com/accelerometer";
 
     @Nullable
     @Override
@@ -55,6 +60,10 @@ public class AccelerometerPart extends Service implements SensorEventListener {
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
         mSensorManager.registerListener(this,mSensor,SensorManager.SENSOR_DELAY_FASTEST);
+        mData5s = new ArrayList<Double>();
+        mTime5s = new ArrayList<Double>();
+        mAcc5s = new ArrayList<Double>();
+        mStartTime = System.currentTimeMillis();
 
         return;
     }
@@ -79,12 +88,35 @@ public class AccelerometerPart extends Service implements SensorEventListener {
                 Map<Double,Double> params = new HashMap<>();
                 for(int i=0; i<mData5s.size(); i++) params.put(mTime5s.get(i),mData5s.get(i));
 
-                JSONObject jsonObject = new JSONObject(params);
+                JSONObject jsonObject = new JSONObject();
+
+                JSONArray jsonTimeArray = new JSONArray();
+                JSONArray jsonDisArray = new JSONArray();
+                JSONArray jsonAccArray = new JSONArray();
+
+                jsonTimeArray.put(mTime5s);
+                jsonDisArray.put(mData5s);
+                jsonAccArray.put(mAcc5s);
+
+
+
+                try {
+                    jsonObject.put("Time", jsonTimeArray);
+                    jsonObject.put("Displacement", jsonDisArray);
+                    jsonObject.put("Acceleration",jsonAccArray);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
 
                 JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
-                        Request.Method.GET, url, jsonObject, new Response.Listener<JSONObject>() {
+                        Request.Method.POST, url, jsonObject, new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
+                        try {
+                            Log.d("RESPONSE SERVER", response.toString(4));
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
 
                     }
                 }, new Response.ErrorListener() {
@@ -102,21 +134,22 @@ public class AccelerometerPart extends Service implements SensorEventListener {
 
             }
 
-            if(currTime-mLastUpdate>10){
+            if(currTime-mLastUpdate>=10){
 
                 long diffTime = currTime-mLastUpdate;
                 mLastUpdate = currTime;
 
                 double disX = (double) (mLastX*diffTime*diffTime-0.5*x*diffTime);
                 double disY = (double) (mLastY*diffTime*diffTime-0.5*y*diffTime);
+                double accXY = (double) (Math.sqrt(Math.pow(x,2)+Math.pow(y,2)));
 
                 double disXY = (double) (Math.sqrt(Math.pow(disX,2)+Math.pow(disY,2)));
 
 
+                mAcc5s.add(accXY);
                 mData5s.add(disXY);
 
-                timeInSec = (currTime-mStartTime)/1000;
-
+                timeInSec = (double) (currTime-mStartTime)/1000;
                 mTime5s.add(timeInSec);
 
                 mLastX=x;

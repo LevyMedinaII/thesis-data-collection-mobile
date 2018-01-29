@@ -4,7 +4,9 @@
     <modules>
       <module fileurl="file://C:\Users\ljda0\AndroidStudioProjects\thesis-data-collection-mobile\ThesisEarthquakeDetector.iml" filepath="C:\Users\ljda0\AndroidStudioProjects\thesis-data-collection-mobile\ThesisEarthquakeDetector.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://C:\Users\ljda0\AndroidStudioProjects\thesis-data-collection-mobile\app\app.iml" filepath="C:\Users\ljda0\AndroidStudioProjects\thesis-data-collection-mobile\app\app.iml" />
       <module fileurl="file://$PROJECT_DIR$/thesis-data-collection-mobile.iml" filepath="$PROJECT_DIR$/thesis-data-collection-mobile.iml" />
+      <module fileurl="file://C:\Users\ljda0\AndroidStudioProjects\thesis-data-collection-mobile\thesis-data-collection-mobile.iml" filepath="C:\Users\ljda0\AndroidStudioProjects\thesis-data-collection-mobile\thesis-data-collection-mobile.iml" />
     </modules>
   </component>
 </project>
