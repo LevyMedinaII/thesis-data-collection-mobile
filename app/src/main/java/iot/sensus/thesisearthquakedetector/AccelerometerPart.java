@@ -39,6 +39,7 @@ public class AccelerometerPart extends Service implements SensorEventListener {
     private List<Double> mData5s;
     private List<Double> mAcc5s;
     private List<Double> mTime5s;
+    private List<Double> mVel5s;
     private long mStartTime = 0;
     private long mLastUpdate = 0;
     private String url = "https://thesis-shake-server.herokuapp.com/accelerometer";
@@ -63,6 +64,7 @@ public class AccelerometerPart extends Service implements SensorEventListener {
         mData5s = new ArrayList<Double>();
         mTime5s = new ArrayList<Double>();
         mAcc5s = new ArrayList<Double>();
+        mVel5s = new ArrayList<Double>();
         mStartTime = System.currentTimeMillis();
 
         return;
@@ -84,8 +86,9 @@ public class AccelerometerPart extends Service implements SensorEventListener {
 
             long currTime = System.currentTimeMillis();
 
-            if(mData5s.size()==500){
+            if(mData5s.size()==100){
                 Map<Double,Double> params = new HashMap<>();
+
                 for(int i=0; i<mData5s.size(); i++) params.put(mTime5s.get(i),mData5s.get(i));
 
                 JSONObject jsonObject = new JSONObject();
@@ -104,6 +107,8 @@ public class AccelerometerPart extends Service implements SensorEventListener {
                     jsonObject.put("Time", jsonTimeArray);
                     jsonObject.put("Displacement", jsonDisArray);
                     jsonObject.put("Acceleration",jsonAccArray);
+                    jsonObject.put("PGA", determinePeakAcc(mAcc5s));
+                    jsonObject.put("PGV", determinePeakVel(mVel5s));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -134,20 +139,30 @@ public class AccelerometerPart extends Service implements SensorEventListener {
 
             }
 
-            if(currTime-mLastUpdate>=10){
+            if(currTime-mLastUpdate>=50){
 
                 long diffTime = currTime-mLastUpdate;
                 mLastUpdate = currTime;
 
+                //displacement
                 double disX = (double) (mLastX*diffTime*diffTime-0.5*x*diffTime);
                 double disY = (double) (mLastY*diffTime*diffTime-0.5*y*diffTime);
                 double accXY = (double) (Math.sqrt(Math.pow(x,2)+Math.pow(y,2)));
 
+                //acceleration
                 double disXY = (double) (Math.sqrt(Math.pow(disX,2)+Math.pow(disY,2)));
+
+
+                //velocity
+                double velX = (double) (mLastX*diffTime+x*diffTime);
+                double velY = (double) (mLastY*diffTime+y*diffTime);
+                double velXY = (double) (Math.sqrt(Math.pow(velX,2)+Math.pow(velY,2)));
+
 
 
                 mAcc5s.add(accXY);
                 mData5s.add(disXY);
+                mVel5s.add(velXY);
 
                 timeInSec = (double) (currTime-mStartTime)/1000;
                 mTime5s.add(timeInSec);
@@ -159,6 +174,35 @@ public class AccelerometerPart extends Service implements SensorEventListener {
 
             }
         }
+    }
+
+    public double determinePeakDis(List<Double> dispData){
+        double peakDis = 0;
+
+        for(double disp : dispData)
+            if(peakDis<disp)
+                peakDis = disp;
+
+        return peakDis;
+    }
+
+    public double determinePeakAcc(List<Double> accData){
+        double peakAcc = 0;
+
+        for(double acc : accData)
+            if(peakAcc<acc)
+                peakAcc = acc;
+
+        return peakAcc;
+    }
+
+    public double determinePeakVel(List<Double> velData){
+        double peakVel = 0;
+        for(double vel : velData)
+            if(peakVel<vel)
+                peakVel = vel;
+
+        return peakVel;
     }
 
     @Override
