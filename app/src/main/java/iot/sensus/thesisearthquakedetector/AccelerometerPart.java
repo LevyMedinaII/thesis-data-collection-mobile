@@ -42,13 +42,11 @@ public class AccelerometerPart extends Service implements SensorEventListener {
     private List<Double> mVel5s;
     private long mStartTime = 0;
     private long mLastUpdate = 0;
-    private String url = "https://thesis-shake-server.herokuapp.com/accelerometer";
+    private String url = "https://cc69e0ab.ngrok.io/data";
 
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-
-
         return null;
     }
 
@@ -86,7 +84,7 @@ public class AccelerometerPart extends Service implements SensorEventListener {
 
             long currTime = System.currentTimeMillis();
 
-            if(mData5s.size()==100){
+            if(mData5s.size()==20){
                 Map<Double,Double> params = new HashMap<>();
 
                 for(int i=0; i<mData5s.size(); i++) params.put(mTime5s.get(i),mData5s.get(i));
@@ -101,41 +99,39 @@ public class AccelerometerPart extends Service implements SensorEventListener {
                 jsonDisArray.put(mData5s);
                 jsonAccArray.put(mAcc5s);
 
-
-
                 try {
                     jsonObject.put("Time", jsonTimeArray);
                     jsonObject.put("Displacement", jsonDisArray);
                     jsonObject.put("Acceleration",jsonAccArray);
                     jsonObject.put("PGA", determinePeakAcc(mAcc5s));
                     jsonObject.put("PGV", determinePeakVel(mVel5s));
+                    jsonObject.put("PGD", determinePeakDis(mData5s));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-
                 JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
                         Request.Method.POST, url, jsonObject, new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try {
-                            Log.d("RESPONSE SERVER", response.toString(4));
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
+                            @Override
+                            public void onResponse(JSONObject response) {
+                                try {
+                                    Log.d("RESPONSE SERVER", response.toString(4));
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
 
-                    }
-                }, new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        error.printStackTrace();
-                    }
-                }
-                );
+                            }
+                        }, new Response.ErrorListener() {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                                error.printStackTrace();
+                            }
+                        }
+                    );
 
                 Volley.newRequestQueue(this).add(jsonObjectRequest);
                 mData5s.clear();
                 mTime5s.clear();
-
+                mVel5s.clear();
 
             }
 
@@ -145,12 +141,13 @@ public class AccelerometerPart extends Service implements SensorEventListener {
                 mLastUpdate = currTime;
 
                 //displacement
-                double disX = (double) (mLastX*diffTime*diffTime-0.5*x*diffTime);
-                double disY = (double) (mLastY*diffTime*diffTime-0.5*y*diffTime);
-                double accXY = (double) (Math.sqrt(Math.pow(x,2)+Math.pow(y,2)));
+                double disX = (double) (mLastX*diffTime*diffTime-0.5*x*diffTime)/1000000;
+                double disY = (double) (mLastY*diffTime*diffTime-0.5*y*diffTime)/1000000;
+                double disXY = (double) (Math.sqrt(Math.pow(disX,2)+Math.pow(disY,2)));
+
+                double accXY = (double) ((Math.sqrt(Math.pow(x,2)+Math.pow(y,2)))/9.8);
 
                 //acceleration
-                double disXY = (double) (Math.sqrt(Math.pow(disX,2)+Math.pow(disY,2)));
 
 
                 //velocity
@@ -160,6 +157,7 @@ public class AccelerometerPart extends Service implements SensorEventListener {
 
 
 
+                Log.d("Acceleratio:", String.valueOf(accXY));
                 mAcc5s.add(accXY);
                 mData5s.add(disXY);
                 mVel5s.add(velXY);
