@@ -3,12 +3,16 @@ package iot.sensus.thesisearthquakedetector;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
 import com.android.volley.Request;
@@ -43,6 +47,7 @@ public class AccelerometerPart extends Service implements SensorEventListener {
     private long mStartTime = 0;
     private long mLastUpdate = 0;
     private String url = "https://cc69e0ab.ngrok.io/data";
+    double latitude, longitude;
 
     @Nullable
     @Override
@@ -55,10 +60,10 @@ public class AccelerometerPart extends Service implements SensorEventListener {
         initializeSensorManager();
     }
 
-    private void initializeSensorManager(){
+    private void initializeSensorManager() {
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
-        mSensorManager.registerListener(this,mSensor,SensorManager.SENSOR_DELAY_FASTEST);
+        mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_FASTEST);
         mData5s = new ArrayList<Double>();
         mTime5s = new ArrayList<Double>();
         mAcc5s = new ArrayList<Double>();
@@ -72,22 +77,22 @@ public class AccelerometerPart extends Service implements SensorEventListener {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mSensorManager.unregisterListener(this,mSensor);
+        mSensorManager.unregisterListener(this, mSensor);
     }
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
         Sensor mAccelerometer = sensorEvent.sensor;
-        if(mAccelerometer.getType() == Sensor.TYPE_LINEAR_ACCELERATION){
+        if (mAccelerometer.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
             float x = sensorEvent.values[0];
             float y = sensorEvent.values[1];
 
             long currTime = System.currentTimeMillis();
 
-            if(mData5s.size()==20){
-                Map<Double,Double> params = new HashMap<>();
+            if (mData5s.size() == 20) {
+                Map<Double, Double> params = new HashMap<>();
 
-                for(int i=0; i<mData5s.size(); i++) params.put(mTime5s.get(i),mData5s.get(i));
+                for (int i = 0; i < mData5s.size(); i++) params.put(mTime5s.get(i), mData5s.get(i));
 
                 JSONObject jsonObject = new JSONObject();
 
@@ -99,6 +104,11 @@ public class AccelerometerPart extends Service implements SensorEventListener {
                 jsonDisArray.put(mData5s);
                 jsonAccArray.put(mAcc5s);
 
+                LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    this.stopSelf();
+                }
+
                 try {
                     jsonObject.put("Time", jsonTimeArray);
                     jsonObject.put("Displacement", jsonDisArray);
@@ -106,6 +116,15 @@ public class AccelerometerPart extends Service implements SensorEventListener {
                     jsonObject.put("PGA", determinePeakAcc(mAcc5s));
                     jsonObject.put("PGV", determinePeakVel(mVel5s));
                     jsonObject.put("PGD", determinePeakDis(mData5s));
+
+                    if(lm != null) {
+                        Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                        longitude = location.getLongitude();
+                        latitude = location.getLatitude();
+
+                        jsonObject.put("Latitude", latitude);
+                        jsonObject.put("Longitude", longitude);
+                    }
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }

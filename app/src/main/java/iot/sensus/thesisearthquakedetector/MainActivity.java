@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         startService(new Intent(this, AccelerometerPart.class));
-        startService(new Intent(this, EarthquakeDataGatherService.class));
+        // startService(new Intent(this, EarthquakeDataGatherService.class));
         // Coarse Location Permission
         if( ContextCompat.checkSelfPermission( getBaseContext(),
                 "android.permission.ACCESS_COARSE_LOCATION") == PackageManager.PERMISSION_GRANTED
